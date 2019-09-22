@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: hello
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+  name: hello
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hello
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "9000"
+        traffic.sidecar.istio.io/excludeOutboundPorts: "2552,8558"
+      labels:
+        app: hello
+    spec:
+      containers:
+        - name: category
+          image: category:latest
+          # Remove for a real project, the image is picked up locally for the integration test
+          imagePullPolicy: Never
+          livenessProbe:
+            httpGet:
+              path: /alive
+              port: 8558
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8558
+          ports:
+            - containerPort: 9000
+              name: "http"
+          env:
+            # The Kubernetes API discovery will use this service name to look for
+            # nodes with this value in the 'app' label.
+            # This can be customized with the 'pod-label-selector' setting.
+            - name: AKKA_CLUSTER_BOOTSTRAP_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: "metadata.labels['app']"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: JAVA_OPTS
+              value: "-Dconfig.resource=kube-application.conf"
+            - name: CASSANDRA_SERVICE_NAME
+              value: "_cql._tcp.cassandra.default.svc.cluster.local"
+            - name: KAFKA_SERVICE_NAME
+              value: "_broker._tcp.kafka.default.svc.cluster.local"
+            - name: APPLICATION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hello-application-secret
+                  key: secret
+            - name: CASSANDRA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: dev-db-secret
+                  key: username
+            - name: CASSANDRA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dev-db-secret
+                  key: password
+            - name: REQUIRED_CONTACT_POINT_NR
+              value: "3"

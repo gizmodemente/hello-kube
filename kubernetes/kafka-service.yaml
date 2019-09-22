@@ -1,0 +1,25 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: kafka
+spec:
+  ports:
+    - name: "broker"
+      protocol: "TCP"
+      port: 9092
+      targetPort:  9092
+      nodePort: 0
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: kafka
+  namespace: development
+subsets:
+  - addresses:
+      - ip: 10.0.2.1
+      - ip: 10.0.2.2
+      - ip: 10.0.2.3
+    ports:
+      - name: "broker"
+        port: 9092
