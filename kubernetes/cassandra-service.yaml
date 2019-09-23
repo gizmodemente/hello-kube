@@ -14,7 +14,7 @@ kind: Endpoints
 apiVersion: v1
 metadata:
   name: cassandra
-  namespace: development
+  namespace: default
 subsets:
   - addresses:
       - ip: 10.0.1.1

@@ -25,8 +25,8 @@ spec:
         app: hello
     spec:
       containers:
-        - name: category
-          image: category:latest
+        - name: hello
+          image: hello-impl:1.0-SNAPSHOT
           # Remove for a real project, the image is picked up locally for the integration test
           imagePullPolicy: Never
           livenessProbe:
@@ -67,12 +67,24 @@ spec:
             - name: CASSANDRA_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: dev-db-secret
+                  name: db-secret
                   key: username
             - name: CASSANDRA_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: dev-db-secret
+                  name: db-secret
                   key: password
             - name: REQUIRED_CONTACT_POINT_NR
               value: "3"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9000
+  selector:
+    app: hello
